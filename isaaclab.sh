@@ -40,8 +40,8 @@ extract_isaacsim_path() {
         # Use the python executable to get the path
         local python_exe=$(extract_python_exe)
         # Retrieve the path importing isaac sim and getting the environment path
-        if [ $(${python_exe} -m pip list | grep -c 'isaacsim-rl') -gt 0 ]; then
-            local isaac_path=$(${python_exe} -c "import isaacsim; import os; print(os.environ['ISAAC_PATH'])")
+        if [ $(${ISAACSIM_PYTHON_EXE} -m pip list | grep -c 'isaacsim-rl') -gt 0 ]; then
+            local isaac_path=$(${ISAACSIM_PYTHON_EXE} -c "import isaacsim; import os; print(os.environ['ISAAC_PATH'])")
         fi
     fi
     # check if there is a path available
@@ -69,7 +69,7 @@ extract_python_exe() {
         # use kit python
         local python_exe=${ISAACLAB_PATH}/_isaac_sim/python.sh
 
-    if [ ! -f "${python_exe}" ]; then
+    if [ ! -f "${ISAACSIM_PYTHON_EXE}" ]; then
             # note: we need to check system python for cases such as docker
             # inside docker, if user installed into system python, we need to use that
             # otherwise, use the python from the kit
@@ -79,8 +79,8 @@ extract_python_exe() {
         fi
     fi
     # check if there is a python path available
-    if [ ! -f "${python_exe}" ]; then
-        echo -e "[ERROR] Unable to find any Python executable at path: '${python_exe}'" >&2
+    if [ ! -f "${ISAACSIM_PYTHON_EXE}" ]; then
+        echo -e "[ERROR] Unable to find any Python executable at path: '${ISAACSIM_PYTHON_EXE}'" >&2
         echo -e "\tThis could be due to the following reasons:" >&2
         echo -e "\t1. Conda environment is not activated." >&2
         echo -e "\t2. Isaac Sim pip package 'isaacsim-rl' is not installed." >&2
@@ -88,7 +88,7 @@ extract_python_exe() {
         exit 1
     fi
     # return the result
-    echo ${python_exe}
+    echo ${ISAACSIM_PYTHON_EXE}
 }
 
 # extract the simulator exe from isaacsim
@@ -121,7 +121,7 @@ install_isaaclab_extension() {
     # if the directory contains setup.py then install the python module
     if [ -f "$1/setup.py" ]; then
         echo -e "\t module: $1"
-        ${python_exe} -m pip install --editable $1
+        ${ISAACSIM_PYTHON_EXE} -m pip install --editable $1
     fi
 }
 
@@ -232,7 +232,7 @@ update_vscode_settings() {
     setup_vscode_script="${ISAACLAB_PATH}/.vscode/tools/setup_vscode.py"
     # check if the file exists before attempting to run it
     if [ -f "${setup_vscode_script}" ]; then
-        ${python_exe} "${setup_vscode_script}"
+        ${ISAACSIM_PYTHON_EXE} "${setup_vscode_script}"
     else
         echo "[WARNING] Unable to find the script 'setup_vscode.py'. Aborting vscode settings setup."
     fi
@@ -278,21 +278,7 @@ while [[ $# -gt 0 ]]; do
             python_exe=$(extract_python_exe)
             # check if pytorch is installed and its version
             # install pytorch with cuda 12.8 for blackwell support
-            if ${python_exe} -m pip list 2>/dev/null | grep -q "torch"; then
-                torch_version=$(${python_exe} -m pip show torch 2>/dev/null | grep "Version:" | awk '{print $2}')
-                echo "[INFO] Found PyTorch version ${torch_version} installed."
-                if [[ "${torch_version}" != "2.7.0+cu128" ]]; then
-                    echo "[INFO] Uninstalling PyTorch version ${torch_version}..."
-                    ${python_exe} -m pip uninstall -y torch torchvision torchaudio
-                    echo "[INFO] Installing PyTorch 2.7.0 with CUDA 12.8 support..."
-                    ${python_exe} -m pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
-                else
-                    echo "[INFO] PyTorch 2.7.0 is already installed."
-                fi
-            else
-                echo "[INFO] Installing PyTorch 2.7.0 with CUDA 12.8 support..."
-                ${python_exe} -m pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
-            fi
+         
             # recursively look into directories and install them
             # this does not check dependencies between extensions
             export -f extract_python_exe
@@ -315,8 +301,8 @@ while [[ $# -gt 0 ]]; do
                 shift # past argument
             fi
             # install the learning frameworks specified
-            ${python_exe} -m pip install -e ${ISAACLAB_PATH}/source/isaaclab_rl["${framework_name}"]
-            ${python_exe} -m pip install -e ${ISAACLAB_PATH}/source/isaaclab_mimic["${framework_name}"]
+            ${ISAACSIM_PYTHON_EXE} -m pip install -e ${ISAACLAB_PATH}/source/isaaclab_rl["${framework_name}"]
+            ${ISAACSIM_PYTHON_EXE} -m pip install -e ${ISAACLAB_PATH}/source/isaaclab_mimic["${framework_name}"]
 
             # check if we are inside a docker container or are building a docker image
             # in that case don't setup VSCode since it asks for EULA agreement which triggers user interaction
@@ -377,9 +363,9 @@ while [[ $# -gt 0 ]]; do
         -p|--python)
             # run the python provided by isaacsim
             python_exe=$(extract_python_exe)
-            echo "[INFO] Using python from: ${python_exe}"
+            echo "[INFO] Using python from: ${ISAACSIM_PYTHON_EXE}"
             shift # past argument
-            ${python_exe} "$@"
+            ${ISAACSIM_PYTHON_EXE} "$@"
             # exit neatly
             break
             ;;
@@ -397,9 +383,9 @@ while [[ $# -gt 0 ]]; do
             python_exe=$(extract_python_exe)
             shift # past argument
             echo "[INFO] Installing template dependencies..."
-            ${python_exe} -m pip install -q -r ${ISAACLAB_PATH}/tools/template/requirements.txt
+            ${ISAACSIM_PYTHON_EXE} -m pip install -q -r ${ISAACLAB_PATH}/tools/template/requirements.txt
             echo -e "\n[INFO] Running template generator...\n"
-            ${python_exe} ${ISAACLAB_PATH}/tools/template/cli.py $@
+            ${ISAACSIM_PYTHON_EXE} ${ISAACLAB_PATH}/tools/template/cli.py $@
             # exit neatly
             break
             ;;
@@ -407,7 +393,7 @@ while [[ $# -gt 0 ]]; do
             # run the python provided by isaacsim
             python_exe=$(extract_python_exe)
             shift # past argument
-            ${python_exe} -m pytest ${ISAACLAB_PATH}/tools $@
+            ${ISAACSIM_PYTHON_EXE} -m pytest ${ISAACLAB_PATH}/tools $@
             # exit neatly
             break
             ;;
@@ -434,9 +420,9 @@ while [[ $# -gt 0 ]]; do
             python_exe=$(extract_python_exe)
             # install pip packages
             cd ${ISAACLAB_PATH}/docs
-            ${python_exe} -m pip install -r requirements.txt > /dev/null
+            ${ISAACSIM_PYTHON_EXE} -m pip install -r requirements.txt > /dev/null
             # build the documentation
-            ${python_exe} -m sphinx -b html -d _build/doctrees . _build/current
+            ${ISAACSIM_PYTHON_EXE} -m sphinx -b html -d _build/doctrees . _build/current
             # open the documentation
             echo -e "[INFO] To open documentation on default browser, run:"
             echo -e "\n\t\txdg-open $(pwd)/_build/current/index.html\n"

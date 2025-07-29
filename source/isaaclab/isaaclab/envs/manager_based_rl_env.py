@@ -178,7 +178,8 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # check if we need to do rendering within the physics loop
         # note: checked here once to avoid multiple checks within the loop
         is_rendering = self.sim.has_gui() or self.sim.has_rtx_sensors()
-
+        print("decimation:",self.cfg.decimation)
+        print("physics_dt:",self.physics_dt)
         # perform physics stepping
         for _ in range(self.cfg.decimation):
             self._sim_step_counter += 1
@@ -199,6 +200,7 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # post-step:
         # -- update env counters (used for curriculum generation)
         self.episode_length_buf += 1  # step in current episode (per env)
+        print("episode_length_buf:",self.episode_length_buf)
         self.common_step_counter += 1  # total step (common for all envs)
         # -- check terminations
         self.reset_buf = self.termination_manager.compute()

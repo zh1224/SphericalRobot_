@@ -535,8 +535,8 @@ class SimulationContext(_SimulationContext):
         if "cuda" in self.device:
             torch.cuda.set_device(self.device)
         # enable kinematic rendering with fabric
-        if self.physics_sim_view:
-            self.physics_sim_view._backend.initialize_kinematic_bodies()
+        # if self.physics_sim_view:
+        #     self.physics_sim_view._backend.initialize_kinematic_bodies()
         # perform additional rendering steps to warm up replicator buffers
         # this is only needed for the first time we set the simulation
         if not soft:

@@ -160,6 +160,7 @@ class Articulation(AssetBase):
     """
 
     def reset(self, env_ids: Sequence[int] | None = None):
+        print(1111111111111)
         # use ellipses object to skip initial indices.
         if env_ids is None:
             env_ids = slice(None)
@@ -182,32 +183,46 @@ class Articulation(AssetBase):
             This ensures that the external wrench is applied at every simulation step.
         """
         # write external wrench
-        if self.has_external_wrench:
-            if self.uses_external_wrench_positions:
-                self.root_physx_view.apply_forces_and_torques_at_position(
-                    force_data=self._external_force_b.view(-1, 3),
-                    torque_data=self._external_torque_b.view(-1, 3),
-                    position_data=self._external_wrench_positions_b.view(-1, 3),
-                    indices=self._ALL_INDICES,
-                    is_global=self._use_global_wrench_frame,
-                )
-            else:
-                self.root_physx_view.apply_forces_and_torques_at_position(
-                    force_data=self._external_force_b.view(-1, 3),
-                    torque_data=self._external_torque_b.view(-1, 3),
-                    position_data=None,
-                    indices=self._ALL_INDICES,
-                    is_global=self._use_global_wrench_frame,
-                )
-
+        # if self.has_external_wrench:
+        #     if self.uses_external_wrench_positions:
+        #         self.root_physx_view.apply_forces_and_torques_at_position(
+        #             force_data=self._external_force_b.view(-1, 3),
+        #             torque_data=self._external_torque_b.view(-1, 3),
+        #             position_data=self._external_wrench_positions_b.view(-1, 3),
+        #             indices=self._ALL_INDICES,
+        #             is_global=self._use_global_wrench_frame,
+        #         )
+        #     else:
+        #         self.root_physx_view.apply_forces_and_torques_at_position(
+        #             force_data=self._external_force_b.view(-1, 3),
+        #             torque_data=self._external_torque_b.view(-1, 3),
+        #             position_data=None,
+        #             indices=self._ALL_INDICES,
+        #             is_global=self._use_global_wrench_frame,
+        #         )
+        dof_per_env = 2
         # apply actuator models
-        self._apply_actuator_model()
+        #self._apply_actuator_model()
         # write actions into simulation
+        dof_per_env = 2
+        num_envs = self._ALL_INDICES.numel()
+
+        # 创建一维张量，大小为总 DOF 数（即 num_envs * dof_per_env）
+        self._joint_effort_target_sim = torch.zeros(num_envs * dof_per_env, device='cuda:0')
+
+        # 每个机器人第一个 DOF 赋值为 80.0，第二个 DOF 默认 0 不改
+        self._joint_effort_target_sim[0::dof_per_env] = 80.0
+
+        # 输出查看索引与力矩向量
+        print("ALL_INDICES:", self._ALL_INDICES)
+        print("Effort Tensor:", self._joint_effort_target_sim)
+
+        # 设置力矩给所有机器人
         self.root_physx_view.set_dof_actuation_forces(self._joint_effort_target_sim, self._ALL_INDICES)
         # position and velocity targets only for implicit actuators
-        if self._has_implicit_actuators:
-            self.root_physx_view.set_dof_position_targets(self._joint_pos_target_sim, self._ALL_INDICES)
-            self.root_physx_view.set_dof_velocity_targets(self._joint_vel_target_sim, self._ALL_INDICES)
+        # if self._has_implicit_actuators:
+        #     self.root_physx_view.set_dof_position_targets(self._joint_pos_target_sim, self._ALL_INDICES)
+        #     self.root_physx_view.set_dof_velocity_targets(self._joint_vel_target_sim, self._ALL_INDICES)
 
     def update(self, dt: float):
         self._data.update(dt)

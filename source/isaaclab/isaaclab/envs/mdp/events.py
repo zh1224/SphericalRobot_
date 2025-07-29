@@ -868,6 +868,7 @@ def reset_root_state_uniform(
     velocity_range: dict[str, tuple[float, float]],
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ):
+    print(77777777777777777777777777777777777)
     """Reset the asset root state to a random position and velocity uniformly within the given ranges.
 
     This function randomizes the root position and velocity of the asset.
@@ -885,7 +886,7 @@ def reset_root_state_uniform(
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
-
+    print("POS_RANGE",pose_range)  #发现传入的参数是在rough_env_cfg中设置的
     # poses
     range_list = [pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
     ranges = torch.tensor(range_list, device=asset.device)
@@ -913,6 +914,7 @@ def reset_root_state_with_random_orientation(
     velocity_range: dict[str, tuple[float, float]],
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ):
+    print(00000000000000000000000000000000000000)
     """Reset the asset root position and velocities sampled randomly within the given ranges
     and the asset root orientation sampled randomly from the SO(3).
 
@@ -988,6 +990,7 @@ def reset_root_state_from_terrain(
     Raises:
         ValueError: If the terrain does not have valid flat patches under the key "init_pos".
     """
+    print(6666666666666666666666666666666666)
     # access the used quantities (to enable type-hinting)
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
     terrain: TerrainImporter = env.scene.terrain
@@ -1070,6 +1073,7 @@ def reset_joints_by_offset(
     velocity_range: tuple[float, float],
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ):
+    print(888888888888)
     """Reset the robot joints with offsets around the default position and velocity by the given ranges.
 
     This function samples random values from the given ranges and biases the default joint positions and velocities

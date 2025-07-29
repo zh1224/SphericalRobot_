@@ -66,13 +66,18 @@ from isaaclab.envs import (
 from isaaclab.utils.assets import retrieve_file_path
 from isaaclab.utils.dict import print_dict
 from isaaclab.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
-
+from isaaclab.scene import InteractiveScene
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit, export_policy_as_onnx
-
+from isaaclab.assets import Articulation, RigidObject
+from isaaclab.envs import DirectRLEnv
+from isaaclab.sim.spawners.from_files import GroundPlaneCfg, spawn_ground_plane
+from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR, retrieve_file_path
+from isaaclab.utils.math import axis_angle_from_quat
+import isaaclab.sim as sim_utils
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
-
+from isaacsim.core.api.simulation_context import SimulationContext
 # PLACEHOLDER: Extension template (do not remove this comment)
 
 
@@ -84,22 +89,28 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+    env_cfg.scene.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
 
+    # sim_cfg = sim_utils.SimulationCfg(dt=0.005, device=args_cli.device,gravity=[0.0, 0.0, -9.81], )
+    # sim = SimulationContext(sim_utils.SimulationCfg(dt=0.005, device=args_cli.device,gravity=[0.0, 0.0, -9.81], ))
+    # sim.set_camera_view(eye=[3.0, 0.0, 2.25], target=[0.0, 0.0, 1.0])
+
+    # scene = InteractiveScene(env_cfg.scene)
     # specify directory for logging experiments
-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
-    log_root_path = os.path.abspath(log_root_path)
-    print(f"[INFO] Loading experiment from directory: {log_root_path}")
-    if args_cli.use_pretrained_checkpoint:
-        resume_path = get_published_pretrained_checkpoint("rsl_rl", task_name)
-        if not resume_path:
-            print("[INFO] Unfortunately a pre-trained checkpoint is currently unavailable for this task.")
-            return
-    elif args_cli.checkpoint:
-        resume_path = retrieve_file_path(args_cli.checkpoint)
-    else:
-        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+    # log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+    # log_root_path = os.path.abspath(log_root_path)
+    # print(f"[INFO] Loading experiment from directory: {log_root_path}")
+    # if args_cli.use_pretrained_checkpoint:
+    #     resume_path = get_published_pretrained_checkpoint("rsl_rl", task_name)
+    #     if not resume_path:
+    #         print("[INFO] Unfortunately a pre-trained checkpoint is currently unavailable for this task.")
+    #         return
+    # elif args_cli.checkpoint:
+    #     resume_path = retrieve_file_path(args_cli.checkpoint)
+    # else:
+    #     resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
 
-    log_dir = os.path.dirname(resume_path)
+    # log_dir = os.path.dirname(resume_path)
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
@@ -109,16 +120,16 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         env = multi_agent_to_single_agent(env)
 
     # wrap for video recording
-    if args_cli.video:
-        video_kwargs = {
-            "video_folder": os.path.join(log_dir, "videos", "play"),
-            "step_trigger": lambda step: step == 0,
-            "video_length": args_cli.video_length,
-            "disable_logger": True,
-        }
-        print("[INFO] Recording videos during training.")
-        print_dict(video_kwargs, nesting=4)
-        env = gym.wrappers.RecordVideo(env, **video_kwargs)
+    # if args_cli.video:
+    #     video_kwargs = {
+    #         "video_folder": os.path.join(log_dir, "videos", "play"),
+    #         "step_trigger": lambda step: step == 0,
+    #         "video_length": args_cli.video_length,
+    #         "disable_logger": True,
+    #     }
+    #     print("[INFO] Recording videos during training.")
+    #     print_dict(video_kwargs, nesting=4)
+    #     env = gym.wrappers.RecordVideo(env, **video_kwargs)
 
     # wrap around environment for rsl-rl
     env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
@@ -141,11 +152,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         policy_nn = ppo_runner.alg.actor_critic
 
     # export policy to onnx/jit
-    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
-    export_policy_as_jit(policy_nn, ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
-    export_policy_as_onnx(
-        policy_nn, normalizer=ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
-    )
+    # export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+    # export_policy_as_jit(policy_nn, ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
+    # export_policy_as_onnx(
+    #     policy_nn, normalizer=ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
+    # )
 
     dt = env.unwrapped.step_dt
 

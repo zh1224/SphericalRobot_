@@ -42,26 +42,26 @@ parser.add_argument("output", type=str, help="The path to store the USD file.")
 parser.add_argument(
     "--merge-joints",
     action="store_true",
-    default=False,
+    default=True,
     help="Consolidate links that are connected by fixed joints.",
 )
 parser.add_argument("--fix-base", action="store_true", default=False, help="Fix the base to where it is imported.")
 parser.add_argument(
     "--joint-stiffness",
     type=float,
-    default=100.0,
+    default=0.0,
     help="The stiffness of the joint drive.",
 )
 parser.add_argument(
     "--joint-damping",
     type=float,
-    default=1.0,
+    default=0.0,
     help="The damping of the joint drive.",
 )
 parser.add_argument(
     "--joint-target-type",
     type=str,
-    default="position",
+    default="none",
     choices=["position", "velocity", "none"],
     help="The type of control to use for the joint drive.",
 )

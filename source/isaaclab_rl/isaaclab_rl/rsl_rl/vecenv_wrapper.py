@@ -56,7 +56,7 @@ class RslRlVecEnvWrapper(VecEnv):
         # store information required by wrapper
         self.num_envs = self.unwrapped.num_envs
         self.device = self.unwrapped.device
-        self.max_episode_length = self.unwrapped.max_episode_length
+        self.max_episode_length = 500
 
         # obtain dimensions of the environment
         if hasattr(self.unwrapped, "action_manager"):
